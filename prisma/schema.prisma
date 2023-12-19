@@ -1,0 +1,167 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SUPER_ADMIN
+  SCHOOL_ADMIN
+  TEACHER
+}
+
+model Avatar {
+  id        String   @id @unique @default(cuid())
+  publicId  String
+  url       String
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updateAt  DateTime @updatedAt
+}
+
+model User {
+  id            String       @id @unique @default(cuid())
+  name          String?
+  email         String       @unique
+  emailVerified DateTime?
+  password      String
+  refreshToken  String?      @db.Text
+  role          Role         @default(TEACHER)
+  avatar        Avatar?
+  schoolAdmin   SchoolAdmin?
+  teacher       Teacher?
+  createdAt     DateTime     @default(now())
+  updateAt      DateTime     @updatedAt
+  Subject       Subject[]
+  Grade         Grade[]
+}
+
+model Address {
+  id        String   @id @unique @default(cuid())
+  address   String
+  city      String?
+  state     String?
+  pinCode   String
+  country   String?
+  school    School?
+  teacher   Teacher?
+  Student   Student?
+  createdAt DateTime @default(now())
+  updateAt  DateTime @updatedAt
+}
+
+model School {
+  id            String        @id @unique @default(cuid())
+  name          String
+  email         String        @unique
+  contactNumber String
+  active        Boolean       @default(true)
+  address       Address?      @relation(fields: [addressId], references: [id], onDelete: Cascade)
+  addressId     String        @unique
+  schoolAdmins  SchoolAdmin[]
+  teachers      Teacher[]
+  subjects      Subject[]
+  grades        Grade[]
+  students      Student[]
+  createdAt     DateTime      @default(now())
+  updateAt      DateTime      @updatedAt
+}
+
+model SchoolAdmin {
+  id        String   @id @unique @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String   @unique
+  school    School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  schoolId  String
+  createdAt DateTime @default(now())
+  updateAt  DateTime @updatedAt
+}
+
+model Teacher {
+  id            String    @id @unique @default(cuid())
+  firstName     String
+  lastName      String
+  email         String    @unique
+  contactNumber String
+  gender        String
+  dateOfBirth   DateTime
+  joiningDate   DateTime
+  active        Boolean   @default(true)
+  address       Address   @relation(fields: [addressId], references: [id], onDelete: Cascade)
+  addressId     String    @unique
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        String    @unique
+  school        School    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  schoolId      String
+  subjects      String
+  grades        String
+  createdAt     DateTime  @default(now())
+  updateAt      DateTime  @updatedAt
+  Subject       Subject[]
+  Grade         Grade?    @relation(fields: [gradeId], references: [id])
+  gradeId       String?
+}
+
+model Student {
+  id            String   @id @unique @default(cuid())
+  firstName     String
+  lastName      String
+  contactNumber String
+  gender        String
+  dateOfBirth   DateTime
+  admissionDate DateTime
+  rollNumber    Int
+  active        Boolean  @default(true)
+  address       Address  @relation(fields: [addressId], references: [id])
+  addressId     String   @unique
+  school        School   @relation(fields: [schoolId], references: [id])
+  schoolId      String
+  grade         Grade?   @relation(fields: [gradeId], references: [id])
+  gradeId       String?
+  createdAt     DateTime @default(now())
+  updateAt      DateTime @updatedAt
+}
+
+enum SubjectType {
+  PRACTICAL
+  THEORY
+}
+
+model Subject {
+  id        String      @id @unique @default(cuid())
+  name      String
+  type      SubjectType @default(THEORY)
+  school    School      @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  schoolId  String
+  Grade     Grade?      @relation(fields: [gradeId], references: [id], onDelete: Cascade)
+  gradeId   String?
+  createdBy User        @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  creatorId String
+  createdAt DateTime    @default(now())
+  updateAt  DateTime    @updatedAt
+  teacher   Teacher?    @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  teacherId String?
+}
+
+model Grade {
+  id        String    @id @unique @default(cuid())
+  name      String
+  class     String
+  section   String
+  subjects  Subject[]
+  school    School    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  schoolId  String
+  teachers  Teacher[]
+  students  Student[]
+  createdBy User      @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  creatorId String
+  createdAt DateTime  @default(now())
+  updateAt  DateTime  @updatedAt
+}
